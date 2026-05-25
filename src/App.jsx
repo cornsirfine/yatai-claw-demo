@@ -1,837 +1,295 @@
-import React, { useState, useEffect } from 'react'
+import React, { useMemo, useState } from "react";
 
-// ── SVG Icons (inline, no external deps) ──
-const IconRobot = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="3" y="11" width="18" height="10" rx="2" />
-    <circle cx="12" cy="5" r="2" />
-    <path d="M12 7v4" />
-    <line x1="8" y1="16" x2="8" y2="16" /><line x1="16" y1="16" x2="16" y2="16" />
-  </svg>
-)
+const employees = [
+  ["image", "商品素材", "商品图像AI员工", "PSD模板 / SKU / ZIP", "批量生成商品主图、系列标识和上架素材。", ["批量主图", "PSD模板", "SKU识别"]],
+  ["video", "内容生成", "视频生成AI员工", "Seedance / 分镜 / 提示词", "一键生成商品短视频脚本、镜头、口播和视频任务包。", ["一键视频", "脚本分镜", "提示词"]],
+  ["ops", "店铺运营", "店铺运营AI员工", "Ozon / 巡检 / PDF", "店铺状态、商品体检、库存预警、订单预警和经营异常分析。", ["每日巡检", "库存预警", "PDF报告"]],
+  ["data", "数据分析", "经营数据AI员工", "Excel / GMV / SKU", "订单表分析、SKU排行、成本缺失和价格异常提醒。", ["GMV", "SKU Top", "经营日报"]],
+  ["growth", "选品增长", "选品增长AI员工", "Brand / Market / Risk", "识别增长商品、利润机会、品牌机会和风险品类。", ["增长分析", "利润筛选", "风险识别"]],
+  ["schedule", "组织协同", "日程排班AI员工", "Calendar / Task / Reminder", "自动安排上新、作图、直播、复盘和团队任务提醒。", ["日程安排", "直播排期", "任务提醒"]],
+  ["stream", "流媒体", "流媒体内容AI员工", "Live / Clip / Cover", "直播脚本、短视频切片、封面标题和多平台发布计划。", ["直播脚本", "短视频切片", "发布排期"]],
+  ["ad", "增长营销", "广告投放AI员工", "A/B / Copy / Keyword", "广告素材方向、A/B 测试文案、关键词和投放复盘。", ["广告文案", "A/B测试", "投放复盘"]],
+  ["finance", "财税经营", "财务核算AI员工", "Cost / ROI / Margin", "订单、采购、物流和平台费用归集，输出利润测算。", ["利润测算", "费用归集", "经营核算"]],
+  ["risk", "合规风控", "风控审核AI员工", "Policy / IP / Sensitive", "检查平台规则、侵权风险、敏感词和下架隐患。", ["敏感词", "侵权风险", "平台规则"]],
+  ["procurement", "供应链", "采购比价AI员工", "Price / Supplier / Alert", "汇总多渠道价格、供应商信息和异常涨价提醒。", ["多平台比价", "供应商", "涨价提醒"]],
+  ["training", "组织协同", "培训教练AI员工", "SOP / Knowledge / Exam", "将 SOP、案例和平台规则沉淀为培训材料。", ["SOP培训", "新人上手", "知识库"]],
+];
 
-const IconImage = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="3" y="3" width="18" height="18" rx="2" />
-    <circle cx="8.5" cy="8.5" r="1.5" />
-    <path d="m21 15-5-5L5 21" />
-  </svg>
-)
+const models = [
+  ["Seedance", "视频生成", "商品短视频、场景视频、口播视频", "Text / Image → Video"],
+  ["Seedream", "图像生成", "商品海报、主图创意、场景图", "Text / Image → Image"],
+  ["Doubao", "语言与多模态", "经营问答、文案生成、业务分析", "Text / Vision / Reasoning"],
+  ["语音模型", "音频与口播", "直播口播、视频配音、多语言讲解", "Speech / Audio"],
+  ["Embedding / Rerank", "知识检索", "SOP、政策、平台规则和商品资料检索", "Search / RAG"],
+  ["Ark Runtime", "统一模型服务", "API 调用、任务编排和企业级接入", "API / Console"],
+];
 
-const IconStore = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z" />
-    <path d="M3 6h18" />
-    <path d="M16 10a4 4 0 0 1-8 0" />
-  </svg>
-)
+const channels = ["飞书", "企业微信", "钉钉", "Telegram", "WhatsApp", "Slack", "Web 控制台", "ArkClaw", "OpenClaw", "Ozon API", "Excel", "PSD/PDF"];
 
-const IconChart = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <line x1="18" y1="20" x2="18" y2="10" />
-    <line x1="12" y1="20" x2="12" y2="4" />
-    <line x1="6" y1="20" x2="6" y2="14" />
-  </svg>
-)
+const skillCards = [
+  ["yatai-image-pack", "商品图像 Skill", "批量主图生成、PSD模板替换、SKU图像匹配。", "openclaw skills install yatai-image-pack"],
+  ["yatai-ozon-ops", "Ozon运营 Skill", "店铺巡检、商品体检、库存预警、订单预警。", "openclaw skills install yatai-ozon-ops"],
+  ["yatai-data-report", "经营数据 Skill", "订单导出表分析、GMV、SKU Top、成本异常。", "openclaw skills install yatai-data-report"],
+  ["yatai-video-agent", "视频内容 Skill", "商品短视频脚本、分镜、Seedance任务包。", "openclaw skills install yatai-video-agent"],
+];
 
-const IconTrending = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
-    <polyline points="16 7 22 7 22 13" />
-  </svg>
-)
+const homePillars = [
+  ["火山模型底座", "接入 Seedance、Seedream、Doubao 等模型能力"],
+  ["YATAI Claw", "跨境电商专属 AI员工工作台"],
+  ["行业解决方案", "商品、运营、内容、数据、供应链一体化"],
+  ["OPC 创业包", "面向个人电商创业的领包入住服务"],
+];
 
-const IconGlobe = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="10" />
-    <line x1="2" y1="12" x2="22" y2="12" />
-    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-  </svg>
-)
+const industrySolutions = [
+  ["个人电商创业", "从选品、作图、上架到经营复盘，降低个人启动跨境电商的门槛。", "AI员工辅助完成高频事务，让创业者把精力放在产品判断和经营决策上。", "from-blue-900 to-cyan-700"],
+  ["电商与跨境", "商品内容生产与投放成本高，转化效率难提升。", "AI生成商品主图、带货视频、上架资料和经营日报，形成增长闭环。", "from-slate-900 to-blue-800"],
+  ["内容与流媒体", "短视频、直播、达人素材生产节奏快，人工难以持续供给。", "AI批量生成脚本、分镜、口播、切片标题和多平台发布计划。", "from-indigo-950 to-violet-800"],
+  ["供应链与采购", "采购价格波动、供应商分散、库存周转压力大。", "AI员工跟踪价格、库存、补货、物流和异常包裹，辅助供应链决策。", "from-slate-900 to-emerald-800"],
+  ["财税与合规", "平台单据、跨境税务和素材合规口径复杂。", "AI整理资料、识别风险、生成说明和整改清单，辅助企业规范经营。", "from-blue-950 to-slate-800"],
+  ["园区与社区", "创业服务缺少标准化工具包，难以规模化复制。", "将 AI员工、SOP、Skill 包和运营看板打包，形成可复制的社区服务能力。", "from-cyan-900 to-blue-700"],
+];
 
-const IconBox = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" />
-    <path d="m3.3 7 8.7 5 8.7-5" />
-    <path d="M12 22V12" />
-  </svg>
-)
+function cx(...classes) { return classes.filter(Boolean).join(" "); }
+function Arrow({ className = "" }) { return <svg viewBox="0 0 24 24" className={className} fill="none"><path d="M5 12h14M13 5l7 7-7 7" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg>; }
+function Search({ className = "" }) { return <svg viewBox="0 0 24 24" className={className} fill="none"><path d="m21 21-4.35-4.35M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>; }
+function Check({ className = "" }) { return <svg viewBox="0 0 24 24" className={className} fill="none"><path d="M20 6 9 17l-5-5" stroke="currentColor" strokeWidth="2.35" strokeLinecap="round" strokeLinejoin="round" /></svg>; }
+function Icon({ type = "default", className = "" }) {
+  const paths = {
+    image: "M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v11a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 17.5v-11Zm3 9 3.2-3.6 2.5 2.9 1.8-2.1L18 16H7Z",
+    video: "M5 6.5A2.5 2.5 0 0 1 7.5 4h9A2.5 2.5 0 0 1 19 6.5v11a2.5 2.5 0 0 1-2.5 2.5h-9A2.5 2.5 0 0 1 5 17.5v-11Zm5 3.2v4.6l4-2.3-4-2.3Z",
+    ops: "M12 3.5 19 7v5.5c0 4.2-2.8 7-7 8-4.2-1-7-3.8-7-8V7l7-3.5Zm-3 8.8 2 2 4.2-4.4",
+    data: "M5 19V9m7 10V5m7 14v-7M4 19h16",
+    growth: "M4 17.5 9.5 12l3 3L20 7.5M15 7.5h5v5",
+    schedule: "M7 4v3M17 4v3M5 8h14M6 6h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2Zm3 7h3m2 0h1",
+    stream: "M6 17a8 8 0 0 1 0-10m12 10a8 8 0 0 0 0-10M9 14a4 4 0 0 1 0-4m6 4a4 4 0 0 0 0-4m-3 2h.01",
+    ad: "M4 13V7l10-3v16L4 17v-4Zm10-1 5 3V9l-5 3Z",
+    finance: "M12 3v18M7 7h7a3 3 0 0 1 0 6H9a3 3 0 0 0 0 6h8",
+    risk: "M12 3l8 4v5c0 5-3.2 8-8 9-4.8-1-8-4-8-9V7l8-4Zm-3 9 2 2 4-5",
+    procurement: "M6 6h15l-2 8H8L6 6Zm0 0 0-2H3m7 16a1 1 0 1 0 0-2 1 1 0 0 0 0 2Zm7 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z",
+    training: "M4 6h16v12H4V6Zm4 12v3m8-3v3M8 10h8M8 14h5",
+    default: "M5 5h14v14H5z",
+  };
+  return <svg viewBox="0 0 24 24" className={className} fill="none"><path d={paths[type] || paths.default} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>;
+}
+function Label({ children, dark = false }) { return <div className={cx("inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-black tracking-[0.18em]", dark ? "border border-white/10 bg-white/10 text-cyan-200" : "border border-blue-100 bg-blue-50 text-blue-700")}><span className="h-2 w-2 rounded-full bg-current" />{children}</div>; }
 
-const IconClipboard = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="8" y="2" width="8" height="4" rx="1" />
-    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
-  </svg>
-)
-
-const IconBolt = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-  </svg>
-)
-
-const IconArrowRight = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <line x1="5" y1="12" x2="19" y2="12" />
-    <polyline points="12 5 19 12 12 19" />
-  </svg>
-)
-
-const IconCheck = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="20 6 9 17 4 12" />
-  </svg>
-)
-
-const IconChevronDown = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="6 9 12 15 18 9" />
-  </svg>
-)
-
-// ── Agent Card Data ──
-const agents = [
-  {
-    id: 'dispatch',
-    title: '总调度智能体',
-    desc: '识别用户任务，调度对应智能体执行工作，统一返回结果。',
-    tags: ['任务识别', '智能分发', '多智能体协作', '工作流编排'],
-    icon: <IconBolt />,
-    color: 'from-blue-500 to-indigo-600',
-    accent: '#3b82f6',
-  },
-  {
-    id: 'image',
-    title: '商品图像智能体',
-    desc: '基于 PSD 模板、SKU 表格和商品素材，批量生成跨境电商商品主图。',
-    tags: ['批量作图', 'PSD 模板', 'SKU 识别', 'ZIP 回传'],
-    icon: <IconImage />,
-    color: 'from-violet-500 to-purple-600',
-    accent: '#8b5cf6',
-  },
-  {
-    id: 'shop',
-    title: '店铺运营智能体',
-    desc: '面向 Ozon 店铺的日常运营检查能力，可用于店铺状态、商品体检、库存预警和经营异常分析。',
-    tags: ['每日巡检', '商品体检', '库存预警', '订单预警', 'PDF 报告'],
-    icon: <IconStore />,
-    color: 'from-emerald-500 to-teal-600',
-    accent: '#10b981',
-  },
-  {
-    id: 'data',
-    title: '经营数据智能体',
-    desc: '读取订单导出表，自动分析 GMV、订单数、SKU 销售、成本缺失和价格异常。',
-    tags: ['订单分析', 'GMV', 'SKU Top', '成本异常', '经营日报'],
-    icon: <IconChart />,
-    color: 'from-amber-500 to-orange-600',
-    accent: '#f59e0b',
-  },
-  {
-    id: 'selection',
-    title: '选品增长智能体',
-    desc: '基于市场表格和品牌数据，筛选增长商品、利润机会和风险品类。',
-    tags: ['选品评分', '增长分析', '利润筛选', '风险识别'],
-    icon: <IconTrending />,
-    color: 'from-rose-500 to-red-600',
-    accent: '#ef4444',
-  },
-  {
-    id: 'intel',
-    title: '市场情报智能体',
-    desc: '自动整理跨境电商资讯、平台政策、行业趋势和商品机会。',
-    tags: ['资讯采集', '政策摘要', '市场简报', '趋势判断'],
-    icon: <IconGlobe />,
-    color: 'from-cyan-500 to-sky-600',
-    accent: '#06b6d4',
-  },
-]
-
-const packs = [
-  {
-    title: '新手启动包',
-    target: '刚开始做跨境电商的个人创业者',
-    items: ['选品模板', '商品图模板', '基础运营 SOP'],
-    icon: <IconRobot />,
-  },
-  {
-    title: '店铺运营包',
-    target: '已有 Ozon 店铺的卖家',
-    items: ['每日巡检', '库存预警', '订单预警', '经营异常检测'],
-    icon: <IconClipboard />,
-  },
-  {
-    title: '商品上新包',
-    target: '需要批量上新和批量作图的团队',
-    items: ['SKU 表格', '主图模板', '批量出图', '结果 ZIP'],
-    icon: <IconBox />,
-  },
-  {
-    title: '数据增长包',
-    target: '需要看经营表现和增长机会的卖家',
-    items: ['GMV 分析', 'SKU 排行', '成本缺失', '价格异常'],
-    icon: <IconTrending />,
-  },
-]
-
-const cases = [
-  {
-    title: '商品主图批量生成',
-    input: 'SKU 表格 + 产品图 + 系列标识',
-    output: '批量 PNG + ZIP',
-    color: 'from-violet-500/20 to-purple-500/10',
-  },
-  {
-    title: 'Ozon 店铺每日巡检',
-    input: '店铺 API 配置',
-    output: '巡检摘要 + PDF 报告',
-    color: 'from-emerald-500/20 to-teal-500/10',
-  },
-  {
-    title: '订单经营分析',
-    input: '订单导出表',
-    output: '销售日报 + SKU 分析 + 成本异常提醒',
-    color: 'from-amber-500/20 to-orange-500/10',
-  },
-]
-
-// ── Navbar ──
-const Navbar = () => {
-  const [scrolled, setScrolled] = useState(false)
-  const [mobileOpen, setMobileOpen] = useState(false)
-
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 20)
-    window.addEventListener('scroll', onScroll)
-    return () => window.removeEventListener('scroll', onScroll)
-  }, [])
-
-  const links = [
-    { label: '首页', href: '#hero' },
-    { label: 'AI 应用', href: '#apps' },
-    { label: '行业解决方案', href: '#solutions' },
-    { label: '跨境电商专区', href: '#packs' },
-    { label: '智能体大厅', href: '#agents' },
-    { label: '服务支持', href: '#cta' },
-  ]
-
-  return (
-    <nav
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        scrolled
-          ? 'bg-[#0f172a]/90 backdrop-blur-xl border-b border-white/5'
-          : 'bg-transparent'
-      }`}
-    >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 lg:h-20">
-          {/* Logo */}
-          <a href="#hero" className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center text-white font-bold text-sm">
-              YC
-            </div>
-            <div>
-              <span className="text-white font-bold text-lg tracking-tight">YATAI</span>
-              <span className="text-cyan-400 font-bold text-lg tracking-tight ml-1">Claw</span>
-            </div>
-          </a>
-
-          {/* Desktop nav */}
-          <div className="hidden lg:flex items-center gap-8">
-            {links.map((l) => (
-              <a
-                key={l.label}
-                href={l.href}
-                className="text-sm text-slate-300 hover:text-white transition-colors"
-              >
-                {l.label}
-              </a>
-            ))}
-          </div>
-
-          {/* Right */}
-          <div className="flex items-center gap-3">
-            <a
-              href="#cta"
-              className="hidden sm:inline-flex items-center gap-1.5 px-5 py-2.5 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-sm font-medium hover:from-blue-500 hover:to-indigo-500 transition-all shadow-lg shadow-blue-600/20"
-            >
-              进入平台
-              <IconArrowRight />
-            </a>
-            {/* Mobile toggle */}
-            <button
-              className="lg:hidden text-slate-300 p-2"
-              onClick={() => setMobileOpen(!mobileOpen)}
-            >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                {mobileOpen ? (
-                  <>
-                    <line x1="18" y1="6" x2="6" y2="18" />
-                    <line x1="6" y1="6" x2="18" y2="18" />
-                  </>
-                ) : (
-                  <>
-                    <line x1="3" y1="6" x2="21" y2="6" />
-                    <line x1="3" y1="12" x2="21" y2="12" />
-                    <line x1="3" y1="18" x2="21" y2="18" />
-                  </>
-                )}
-              </svg>
-            </button>
-          </div>
-        </div>
-
-        {/* Mobile menu */}
-        {mobileOpen && (
-          <div className="lg:hidden pb-4 pt-2 border-t border-white/5">
-            {links.map((l) => (
-              <a
-                key={l.label}
-                href={l.href}
-                onClick={() => setMobileOpen(false)}
-                className="block py-2.5 text-sm text-slate-300 hover:text-white"
-              >
-                {l.label}
-              </a>
-            ))}
-            <a
-              href="#cta"
-              onClick={() => setMobileOpen(false)}
-              className="mt-3 block text-center py-3 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-sm font-medium"
-            >
-              进入平台
-            </a>
-          </div>
-        )}
-      </div>
-    </nav>
-  )
+function Header() {
+  return <header className="fixed left-0 right-0 top-0 z-50 border-b border-white/10 bg-[#07111f]/80 backdrop-blur-2xl">
+    <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6 lg:px-8">
+      <a href="#top" className="flex items-center gap-3"><div className="grid h-11 w-11 place-items-center rounded-2xl bg-gradient-to-br from-blue-500 via-cyan-400 to-violet-500 text-lg font-black shadow-[0_0_42px_rgba(34,211,238,.35)]">Y</div><div><div className="text-lg font-black tracking-tight text-white">YATAI Claw</div><div className="text-[10px] font-semibold uppercase tracking-[0.28em] text-cyan-200/80">AI Employee Platform</div></div></a>
+      <nav className="hidden items-center gap-1 rounded-full border border-white/10 bg-white/[.06] p-1 text-sm font-bold text-slate-200/90 lg:flex">
+        {[["#top","首页"],["#skills","AI员工"],["#market","Skill市场"],["#models","模型底座"],["#channels","生态接入"],["#quickstart","快速开始"]].map(([href,label],i)=><a key={href} href={href} className={cx("rounded-full px-4 py-2 transition hover:bg-white/10", i===0 && "bg-white/10 text-white")}>{label}</a>)}
+      </nav>
+      <button className="rounded-full bg-white px-5 py-2.5 text-sm font-black text-slate-950 shadow-xl shadow-cyan-500/10">进入平台</button>
+    </div>
+  </header>;
 }
 
-// ── Section Wrapper ──
-const Section = ({ id, children, className = '' }) => (
-  <section id={id} className={`relative ${className}`}>
-    {children}
-  </section>
-)
+function CodeBlock({ children }) {
+  return <div className="overflow-hidden rounded-3xl border border-white/10 bg-[#07111f] shadow-[0_26px_80px_rgba(0,0,0,.35)]"><div className="flex items-center justify-between border-b border-white/10 px-5 py-3"><div className="flex gap-2"><span className="h-3 w-3 rounded-full bg-red-400"/><span className="h-3 w-3 rounded-full bg-yellow-300"/><span className="h-3 w-3 rounded-full bg-green-400"/></div><span className="text-xs font-bold text-slate-400">terminal</span></div><pre className="whitespace-pre-wrap p-6 text-sm leading-7 text-cyan-100"><code>{children}</code></pre></div>;
+}
 
-// ── Hero ──
-const Hero = () => (
-  <Section id="hero" className="min-h-screen flex items-center tech-grid overflow-hidden pt-20">
-    {/* Background orbs */}
-    <div className="absolute top-1/4 -left-32 w-96 h-96 bg-blue-500/10 rounded-full blur-[120px]" />
-    <div className="absolute bottom-1/4 -right-32 w-96 h-96 bg-cyan-500/10 rounded-full blur-[120px]" />
+function HeroConsole() {
+  return <div className="relative"><div className="absolute -inset-8 rounded-[48px] bg-gradient-to-br from-cyan-400/20 via-blue-600/10 to-violet-500/25 blur-3xl" /><div className="relative rounded-[36px] border border-white/12 bg-white/[.07] p-5 shadow-[0_30px_120px_rgba(0,0,0,.45)] backdrop-blur-2xl"><div className="mb-5 flex items-center justify-between rounded-3xl border border-white/10 bg-slate-950/40 px-5 py-4"><div><div className="text-sm font-black text-white">YATAI Claw Runtime</div><div className="mt-1 text-xs text-slate-400">AI员工运行中 · 飞书 / ArkClaw / Runtime</div></div><div className="rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-1 text-xs font-black text-emerald-200">ONLINE</div></div><div className="grid grid-cols-12 gap-4"><div className="col-span-12 rounded-3xl border border-cyan-300/20 bg-gradient-to-br from-blue-500/25 to-violet-500/15 p-5 lg:col-span-7"><div className="flex items-center gap-3"><div className="grid h-12 w-12 place-items-center rounded-2xl bg-white/15 text-cyan-100"><Icon type="default" className="h-6 w-6"/></div><div><div className="text-xs font-bold text-cyan-100">Lead AI Employee</div><div className="font-black text-white">业务管家AI员工</div></div></div><div className="mt-5 grid grid-cols-3 gap-3 text-xs text-slate-200"><div className="rounded-2xl bg-white/10 p-3">任务识别</div><div className="rounded-2xl bg-white/10 p-3">员工分配</div><div className="rounded-2xl bg-white/10 p-3">结果汇总</div></div></div><div className="col-span-12 rounded-3xl border border-white/10 bg-white/[.07] p-5 lg:col-span-5"><div className="mb-4 text-xs font-bold text-slate-400">Platform Capacity</div><div className="grid grid-cols-2 gap-3"><div className="rounded-2xl bg-slate-950/35 p-3"><div className="text-2xl font-black text-white">24+</div><div className="text-xs text-slate-400">AI员工</div></div><div className="rounded-2xl bg-slate-950/35 p-3"><div className="text-2xl font-black text-cyan-200">80+</div><div className="text-xs text-slate-400">场景</div></div><div className="rounded-2xl bg-slate-950/35 p-3"><div className="text-2xl font-black text-violet-200">120+</div><div className="text-xs text-slate-400">流程</div></div><div className="rounded-2xl bg-slate-950/35 p-3"><div className="text-2xl font-black text-emerald-200">Skill</div><div className="text-xs text-slate-400">可复制包</div></div></div></div>{[["image","商品图像","PSD / SKU"],["ops","店铺运营","Ozon / PDF"],["video","视频生成","Seedance"],["schedule","日程排班","Calendar"]].map(([type,name,desc])=><div key={name} className="col-span-6 rounded-3xl border border-white/10 bg-white/[.07] p-4 lg:col-span-3"><div className="mb-4 flex items-center justify-between"><Icon type={type} className="h-6 w-6 text-cyan-200"/><span className="rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-bold text-cyan-100">Ready</span></div><div className="font-black text-white">{name}</div><div className="mt-1 text-xs text-slate-400">{desc}</div></div>)}</div></div></div>;
+}
 
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24 w-full">
-      <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-        {/* Left */}
-        <div className="relative z-10">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-medium mb-6">
-            <div className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
-            AI 智能体工作台 · 正式公测中
-          </div>
+function EmployeeCard({ emp }) {
+  const [key, category, title, sub, desc, tags] = emp;
+  return <div className="group rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_18px_55px_rgba(15,23,42,.07)] transition hover:-translate-y-1 hover:shadow-[0_30px_90px_rgba(15,23,42,.13)]"><div className="mb-5 flex items-start justify-between"><div className="grid h-14 w-14 place-items-center rounded-2xl bg-slate-950 text-cyan-200"><Icon type={key} className="h-7 w-7"/></div><span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">{category}</span></div><div className="text-xs font-black uppercase tracking-[0.16em] text-blue-600">{sub}</div><h3 className="mt-2 text-xl font-black tracking-tight text-slate-950">{title}</h3><p className="mt-3 min-h-[78px] text-sm leading-7 text-slate-600">{desc}</p><div className="mt-5 flex flex-wrap gap-2">{tags.map(t=><span key={t} className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">{t}</span>)}</div><button className="mt-6 inline-flex items-center gap-2 text-sm font-black text-blue-700">详情 <Arrow className="h-4 w-4"/></button></div>;
+}
 
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight tracking-tight">
-            <span className="gradient-text">YATAI Claw</span>
-          </h1>
-          <p className="text-xl sm:text-2xl text-slate-300 font-medium mt-2">
-            跨境电商 AI 公共服务平台
-          </p>
-          <p className="text-slate-400 leading-relaxed mt-6 max-w-xl text-sm sm:text-base">
-            以 AI 智能体重构跨境电商经营流程，为创业者、中小卖家和运营团队提供可直接使用的商品作图、店铺巡检、数据分析、选品增长和市场情报能力。
-          </p>
+export default function YataiClawPlatformDemo() {
+  const [active, setActive] = useState("全部");
+  const categories = ["全部", "商品素材", "店铺运营", "数据分析", "内容生成", "流媒体", "组织协同", "供应链", "财税经营", "合规风控"];
+  const visible = useMemo(()=> active === "全部" ? employees : employees.filter(e => e[1] === active), [active]);
 
-          <div className="flex flex-wrap gap-3 mt-8">
-            <a
-              href="#apps"
-              className="inline-flex items-center gap-1.5 px-6 py-3 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-sm font-medium hover:from-blue-500 hover:to-indigo-500 transition-all shadow-lg shadow-blue-600/25"
-            >
-              进入 AI 应用大厅
-              <IconArrowRight />
-            </a>
-            <a
-              href="#solutions"
-              className="inline-flex items-center gap-1.5 px-6 py-3 rounded-lg border border-white/10 text-slate-300 text-sm font-medium hover:bg-white/5 transition-all"
-            >
-              查看跨境电商解决方案
-            </a>
-          </div>
-        </div>
+  return <div id="top" className="min-h-screen scroll-smooth bg-slate-950 text-white"><style>{`html{scroll-behavior:smooth}`}</style><Header />
+    <section className="relative overflow-hidden bg-[radial-gradient(circle_at_top_left,#17346d_0%,#07111f_42%,#030712_100%)] pt-20"><div className="pointer-events-none absolute inset-0"><div className="absolute -top-24 left-1/4 h-72 w-72 rounded-full bg-cyan-400/20 blur-3xl"/><div className="absolute top-8 right-12 h-96 w-96 rounded-full bg-blue-600/25 blur-3xl"/><div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,.035)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.035)_1px,transparent_1px)] bg-[size:44px_44px] [mask-image:radial-gradient(circle_at_50%_0%,black,transparent_72%)]"/></div><main className="relative z-10 mx-auto grid max-w-7xl grid-cols-1 items-center gap-12 px-6 pb-24 pt-16 lg:grid-cols-[1.02fr_.98fr] lg:px-8 lg:pb-32 lg:pt-24"><div><div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/8 px-4 py-2 text-sm text-cyan-100 backdrop-blur-xl"><span className="h-2 w-2 rounded-full bg-cyan-300 shadow-[0_0_20px_rgba(103,232,249,.85)]"/>真正能落地的跨境电商 AI员工平台</div><h1 className="max-w-4xl text-5xl font-black leading-[1.05] tracking-[-0.055em] text-white md:text-7xl">
+              <span className="block uppercase tracking-[-0.035em]">YATAI CLAW</span>
+              <span className="mt-3 block bg-gradient-to-r from-cyan-200 via-white to-violet-200 bg-clip-text text-transparent">助力个人电商创业</span>
+              <span className="mt-3 block text-white">最后一公里</span>
+            </h1><p className="mt-7 max-w-2xl text-lg leading-8 text-slate-300 md:text-xl">YATAI Claw 将 Skill 市场、AI员工岗位、火山引擎模型能力与跨境电商工作流结合，形成可复制的创业服务平台。</p><div className="mt-9 flex flex-wrap gap-4"><button className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-blue-500 to-cyan-400 px-6 py-3.5 text-sm font-black text-white shadow-[0_16px_50px_rgba(34,211,238,.25)]">开始体验 <Arrow className="h-4 w-4"/></button><button className="rounded-full border border-white/10 bg-white/10 px-6 py-3.5 text-sm font-black text-white backdrop-blur-xl">查看 Skill 市场</button></div><div className="mt-9 grid max-w-2xl grid-cols-2 gap-3 text-sm md:grid-cols-4">{[["24+","AI员工岗位"],["80+","业务场景"],["120+","标准流程"],["Skill","可复制包"]].map(([n,l])=><div key={l} className="rounded-2xl border border-white/10 bg-white/[.06] p-4 backdrop-blur"><div className="text-2xl font-black text-white">{n}</div><div className="mt-1 text-xs text-slate-400">{l}</div></div>)}</div></div><HeroConsole /></main></section>
 
-        {/* Right - Agent Panel */}
-        <div className="relative z-10">
-          <div className="glass rounded-2xl p-6 sm:p-8 glow-blue">
-            <h3 className="text-white font-semibold text-sm mb-5 flex items-center gap-2">
-              <IconBolt />
-              智能体矩阵
-            </h3>
-            <div className="grid grid-cols-2 gap-3">
-              {agents.map((a) => (
-                <div
-                  key={a.id}
-                  className="rounded-xl bg-white/[0.03] border border-white/5 p-4 hover:bg-white/[0.06] transition-colors"
-                >
-                  <div className="flex items-center gap-2.5 mb-2">
-                    <div
-                      className="w-8 h-8 rounded-lg flex items-center justify-center text-white"
-                      style={{ background: a.accent }}
-                    >
-                      {a.icon}
-                    </div>
-                    <span className="text-white text-sm font-medium">{a.title}</span>
-                  </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {a.tags.slice(0, 2).map((t) => (
-                      <span
-                        key={t}
-                        className="text-[10px] px-2 py-0.5 rounded-full bg-white/5 text-slate-400"
-                      >
-                        {t}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Flow line decoration */}
-            <div className="mt-5 flex items-center justify-center gap-1 text-slate-600 text-xs">
-              <span className="w-2 h-2 rounded-full bg-blue-500" />
-              <span className="w-12 h-px bg-gradient-to-r from-blue-500/40 to-transparent" />
-              <span>AI 智能体协作</span>
-              <span className="w-12 h-px bg-gradient-to-l from-cyan-500/40 to-transparent" />
-              <span className="w-2 h-2 rounded-full bg-cyan-500" />
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </Section>
-)
-
-// ── Stats ──
-const Stats = () => {
-  const stats = [
-    { value: '6+', label: 'AI 智能体模块' },
-    { value: '20+', label: '跨境电商场景' },
-    { value: '30+', label: '标准业务流程' },
-    { value: 'N+', label: '可复制创业包' },
-  ]
-
-  return (
-    <section className="py-12 border-y border-white/5 bg-white/[0.02]">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-          {stats.map((s) => (
-            <div key={s.label} className="text-center">
-              <div className="text-3xl sm:text-4xl font-bold gradient-text">{s.value}</div>
-              <div className="text-sm text-slate-400 mt-1.5">{s.label}</div>
+    <section className="relative bg-white py-0 text-slate-950">
+      <div className="h-px bg-gradient-to-r from-transparent via-blue-600 to-transparent" />
+      <div className="mx-auto max-w-7xl px-6 lg:px-8">
+        <div className="grid border-x border-slate-100 bg-gradient-to-r from-white via-blue-50/40 to-blue-100/50 md:grid-cols-4">
+          {homePillars.map(([title, sub], index) => (
+            <div key={title} className={cx("relative px-8 py-8 text-center", index === 0 && "border-t-4 border-blue-600", index > 0 && "border-l border-slate-200/80")}>
+              <div className="text-xl font-black tracking-tight text-slate-950">{title}</div>
+              <div className="mt-2 text-sm leading-6 text-slate-500">{sub}</div>
             </div>
           ))}
         </div>
       </div>
     </section>
-  )
-}
 
-// ── AI Application Center ──
-const AppCenter = () => (
-  <Section id="apps" className="py-24 tech-grid">
-    {/* Background */}
-    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-blue-500/5 rounded-full blur-[150px]" />
-
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-      <div className="text-center mb-14">
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-medium mb-4">
-          AI APPLICATIONS
+    <section className="bg-white py-24 text-slate-950">
+      <div className="mx-auto max-w-7xl px-6 lg:px-8">
+        <div className="mb-14 text-center">
+          <Label>AI EMPLOYEE SHOWCASE</Label>
+          <h2 className="mt-5 text-4xl font-black tracking-[-0.045em] text-slate-950 md:text-6xl">普惠AI员工，灵活调度</h2>
+          <p className="mx-auto mt-5 max-w-3xl text-lg leading-8 text-slate-600">把复杂的电商岗位能力做成可调用、可编排、可交付的 AI员工，让个人创业者也能拥有一支轻量化数字团队。</p>
         </div>
-        <h2 className="text-3xl sm:text-4xl font-bold gradient-text">AI 应用中心</h2>
-        <p className="text-slate-400 mt-4 max-w-2xl mx-auto text-sm sm:text-base">
-          覆盖跨境电商全链路的 AI 智能体应用，按需选用，即开即用。
-        </p>
-      </div>
 
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
-        {agents.map((a) => (
-          <div
-            key={a.id}
-            className="glass rounded-xl p-6 card-hover"
-          >
-            {/* Icon */}
-            <div
-              className="w-12 h-12 rounded-xl flex items-center justify-center text-white mb-4 bg-gradient-to-br"
-              style={{ background: `linear-gradient(135deg, ${a.accent}dd, ${a.accent}88)` }}
-            >
-              {a.icon}
-            </div>
-
-            <h3 className="text-white font-semibold text-base mb-2">{a.title}</h3>
-            <p className="text-slate-400 text-sm leading-relaxed mb-4">{a.desc}</p>
-
-            {/* Tags */}
-            <div className="flex flex-wrap gap-1.5 mb-5">
-              {a.tags.map((t) => (
-                <span
-                  key={t}
-                  className="text-[11px] px-2.5 py-1 rounded-full bg-white/5 text-slate-400 border border-white/5"
-                >
-                  {t}
-                </span>
-              ))}
-            </div>
-
-            {/* Buttons */}
-            <div className="flex items-center gap-3">
-              <a
-                href="#cta"
-                className="text-sm text-blue-400 hover:text-blue-300 transition-colors font-medium inline-flex items-center gap-1"
-              >
-                立即体验
-                <IconArrowRight />
-              </a>
-              <a
-                href="#cta"
-                className="text-sm text-slate-500 hover:text-slate-300 transition-colors"
-              >
-                查看详情
-              </a>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  </Section>
-)
-
-// ── Solutions ──
-const Solutions = () => (
-  <Section id="solutions" className="py-24">
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div className="text-center mb-14">
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs font-medium mb-4">
-          SOLUTIONS
-        </div>
-        <h2 className="text-3xl sm:text-4xl font-bold gradient-text">跨境电商全流程 AI 解决方案</h2>
-        <p className="text-slate-400 mt-4 max-w-2xl mx-auto text-sm sm:text-base">
-          从选品到复盘，每一个环节都有对应的智能体支撑。
-        </p>
-      </div>
-
-      <div className="flex flex-col lg:flex-row items-center justify-center gap-3 lg:gap-0">
-        {[
-          { step: '01', label: '选品', agent: '选品增长智能体' },
-          { step: '02', label: '商品素材', agent: '商品图像智能体' },
-          { step: '03', label: '上架准备', agent: '总调度智能体 + 模板中心' },
-          { step: '04', label: '店铺运营', agent: '店铺运营智能体' },
-          { step: '05', label: '数据复盘', agent: '经营数据智能体' },
-        ].map((item, idx) => (
-          <React.Fragment key={item.step}>
-            <div className="glass rounded-xl p-5 text-center min-w-[140px] flex-1 max-w-[200px] card-hover">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center text-white font-bold text-sm mx-auto mb-2">
-                {item.step}
+        <div className="grid gap-6 lg:grid-cols-12">
+          <div className="group relative overflow-hidden rounded-[34px] border border-blue-100 bg-[#f3f8ff] p-8 shadow-[0_24px_70px_rgba(30,64,175,.10)] lg:col-span-8 lg:min-h-[390px]">
+            <div className="absolute right-[-90px] top-[-90px] h-72 w-72 rounded-full bg-cyan-200/45 blur-3xl" />
+            <div className="relative grid h-full gap-8 lg:grid-cols-[.9fr_1.1fr] lg:items-center">
+              <div>
+                <div className="mb-8 inline-flex rounded-full bg-white px-4 py-2 text-sm font-black text-blue-700 shadow-sm">Lumi-Video-2.0</div>
+                <h3 className="text-3xl font-black tracking-[-0.035em] text-slate-950 md:text-4xl">商品图转带货视频</h3>
+                <p className="mt-5 max-w-sm text-base leading-8 text-slate-600">一张图生成带货视频，自动生成口播脚本、动态字幕和平台化视频任务包。</p>
+                <button className="mt-10 inline-flex items-center gap-2 text-lg font-black text-blue-600">立即体验 <Arrow className="h-5 w-5" /></button>
               </div>
-              <h4 className="text-white font-semibold text-sm mb-1">{item.label}</h4>
-              <p className="text-slate-500 text-[11px]">{item.agent}</p>
-            </div>
-            {idx < 4 && (
-              <div className="hidden lg:flex items-center text-slate-600">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                  <line x1="5" y1="12" x2="19" y2="12" />
-                  <polyline points="12 5 19 12 12 19" />
-                </svg>
-              </div>
-            )}
-            {idx < 4 && <div className="lg:hidden w-px h-6 bg-white/10" />}
-          </React.Fragment>
-        ))}
-      </div>
-    </div>
-  </Section>
-)
-
-// ── OPC Packs ──
-const Packs = () => (
-  <Section id="packs" className="py-24 tech-grid">
-    <div className="absolute top-0 right-0 w-96 h-96 bg-cyan-500/5 rounded-full blur-[120px]" />
-
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-      <div className="text-center mb-14">
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-medium mb-4">
-          OPC PACKS
-        </div>
-        <h2 className="text-3xl sm:text-4xl font-bold gradient-text">OPC 跨境电商创业包</h2>
-        <p className="text-slate-400 mt-4 max-w-2xl mx-auto text-sm sm:text-base">
-          为一人公司、轻团队和跨境电商创业者提供标准化启动包，包含 AI 智能体、运营模板、商品图像生产、选品分析、店铺巡检和经营数据分析能力。
-        </p>
-      </div>
-
-      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        {packs.map((p) => (
-          <div key={p.title} className="glass rounded-xl p-6 card-hover">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500/20 to-cyan-500/20 flex items-center justify-center text-blue-400 mb-4">
-              {p.icon}
-            </div>
-            <h3 className="text-white font-semibold text-base mb-1">{p.title}</h3>
-            <p className="text-slate-500 text-xs mb-4">适合：{p.target}</p>
-            <ul className="space-y-2">
-              {p.items.map((item) => (
-                <li key={item} className="flex items-center gap-2 text-sm text-slate-400">
-                  <span className="text-emerald-400 flex-shrink-0">
-                    <IconCheck />
-                  </span>
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
-      </div>
-    </div>
-  </Section>
-)
-
-// ── Architecture ──
-const Architecture = () => (
-  <Section className="py-24">
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div className="text-center mb-14">
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-400 text-xs font-medium mb-4">
-          ARCHITECTURE
-        </div>
-        <h2 className="text-3xl sm:text-4xl font-bold gradient-text">平台能力架构</h2>
-      </div>
-
-      <div className="flex flex-col items-center gap-2">
-        {/* Layer 1 - User */}
-        <div className="glass rounded-xl px-8 py-4 text-center">
-          <div className="text-sm text-white font-medium">用户需求</div>
-        </div>
-
-        <div className="text-slate-600">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-            <line x1="5" y1="12" x2="19" y2="12" />
-            <polyline points="12 5 19 12 12 19" />
-          </svg>
-        </div>
-
-        {/* Layer 2 - Dispatch */}
-        <div className="glass rounded-xl px-8 py-4 text-center border-blue-500/30">
-          <div className="text-sm text-white font-medium">YATAI Claw 总调度</div>
-        </div>
-
-        <div className="text-slate-600">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-            <line x1="5" y1="12" x2="19" y2="12" />
-            <polyline points="12 5 19 12 12 19" />
-          </svg>
-        </div>
-
-        {/* Layer 3 - Agent Matrix */}
-        <div className="glass rounded-xl p-6 w-full max-w-3xl">
-          <div className="text-xs text-slate-500 mb-3 text-center font-medium">AI 智能体矩阵</div>
-          <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
-            {agents.map((a) => (
-              <div key={a.id} className="text-center">
-                <div className="w-10 h-10 rounded-xl mx-auto mb-1.5 flex items-center justify-center text-white" style={{ background: a.accent }}>
-                  {a.icon}
+              <div className="relative flex items-center justify-center gap-8">
+                <div className="text-center">
+                  <div className="grid h-40 w-40 place-items-center rounded-[28px] bg-gradient-to-br from-orange-100 via-white to-blue-100 shadow-[0_24px_60px_rgba(30,64,175,.14)]">
+                    <div className="relative h-24 w-24 rounded-[24px] bg-gradient-to-br from-amber-300 to-orange-500 shadow-lg">
+                      <div className="absolute left-5 top-5 h-5 w-12 rounded-full bg-white/70" />
+                      <div className="absolute bottom-5 right-5 h-10 w-10 rounded-2xl bg-white/40" />
+                    </div>
+                  </div>
+                  <div className="mt-4 text-xs font-black text-slate-400">输入商品图</div>
                 </div>
-                <div className="text-[10px] text-slate-400 leading-tight">{a.title}</div>
+                <div className="text-4xl font-black text-blue-500">?</div>
+                <div className="text-center">
+                  <div className="relative h-56 w-36 overflow-hidden rounded-[32px] border-[6px] border-slate-950 bg-gradient-to-b from-blue-100 to-slate-200 shadow-[0_32px_80px_rgba(15,23,42,.20)]">
+                    <div className="absolute inset-x-4 top-6 h-20 rounded-[26px] bg-gradient-to-br from-cyan-300 to-blue-500" />
+                    <div className="absolute bottom-6 left-4 right-4 h-20 rounded-[22px] bg-white/75" />
+                    <div className="absolute left-1/2 top-1/2 h-24 w-24 -translate-x-1/2 -translate-y-1/2 rounded-full bg-rose-300/65 blur-xl" />
+                  </div>
+                  <div className="mt-4 text-xs font-black text-slate-400">AI 生成预览</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="relative overflow-hidden rounded-[34px] border border-slate-200 bg-[#eef4fb] p-8 shadow-[0_24px_70px_rgba(15,23,42,.08)] lg:col-span-4 lg:min-h-[390px]">
+            <div className="absolute right-8 top-8 text-3xl text-slate-400">?</div>
+            <div className="relative">
+              <div className="mb-8 text-sm font-black text-blue-600">Sales-Coach-Pro</div>
+              <h3 className="text-3xl font-black tracking-[-0.035em] text-slate-950 md:text-4xl">AI 销冠陪练</h3>
+              <p className="mt-4 text-base leading-8 text-slate-600">结合企业私有知识库，实时生成销售话术、异议处理和复盘建议。</p>
+              <div className="mt-8 rounded-[26px] bg-white/70 p-5 shadow-sm">
+                <div className="mb-4 inline-flex rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-500">客户觉得价格超预算了...</div>
+                <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+                  <div className="mb-2 font-black text-blue-600">销冠建议</div>
+                  <div className="space-y-2 text-sm text-slate-600"><div>1. 强调全生命周期脚本增效...</div><div>2. 拆解日均使用成本...</div></div>
+                </div>
+              </div>
+              <button className="mt-8 inline-flex items-center gap-2 text-lg font-black text-blue-600">进入陪练 <Arrow className="h-5 w-5" /></button>
+            </div>
+          </div>
+
+          <div className="relative overflow-hidden rounded-[34px] border border-slate-800 bg-[#071126] p-8 text-white shadow-[0_24px_70px_rgba(15,23,42,.20)] lg:col-span-4">
+            <div className="mb-8 inline-flex rounded-full bg-white px-4 py-2 text-sm font-black text-blue-700">Live-Avatar-3.0</div>
+            <h3 className="text-3xl font-black tracking-[-0.035em]">真人口播数字人</h3>
+            <p className="mt-4 text-base leading-8 text-slate-300">24小时代替真人出镜，驱动商品口播、直播预热和多语言讲解。</p>
+            <div className="mt-8 grid grid-cols-4 gap-3">
+              {["直播", "工厂", "展厅", "门店"].map((item, i) => <div key={item} className="h-36 rounded-[22px] bg-gradient-to-b from-blue-500/40 to-slate-950/60 p-3 text-xs font-black text-cyan-100">{item}</div>)}
+            </div>
+            <button className="mt-8 inline-flex items-center gap-2 text-lg font-black text-cyan-300">立即克隆 <Arrow className="h-5 w-5" /></button>
+          </div>
+
+          <div className="relative overflow-hidden rounded-[34px] border border-slate-200 bg-[#f3f7fc] p-8 shadow-[0_24px_70px_rgba(15,23,42,.08)] lg:col-span-4">
+            <div className="mb-8 text-sm font-black text-blue-600">AI CS Agent</div>
+            <h3 className="text-3xl font-black tracking-[-0.035em] text-slate-950">企业AI客服</h3>
+            <p className="mt-4 text-base leading-8 text-slate-600">7×24无休解答产品与服务咨询，融合私有知识库，提升整体满意度。</p>
+            <div className="mt-10 rounded-[26px] bg-gradient-to-br from-blue-700 to-cyan-400 p-5 text-white shadow-lg"><div className="rounded-2xl bg-white/15 p-4 text-sm">您好，请问这款商品支持俄罗斯本地发货吗？</div><div className="mt-3 rounded-2xl bg-white/25 p-4 text-sm">支持，可根据店铺库存和物流渠道自动回答。</div></div>
+            <button className="mt-8 inline-flex items-center gap-2 text-lg font-black text-blue-600">立即进入 <Arrow className="h-5 w-5" /></button>
+          </div>
+
+          <div className="relative overflow-hidden rounded-[34px] border border-slate-200 bg-[#f3f7fc] p-8 shadow-[0_24px_70px_rgba(15,23,42,.08)] lg:col-span-4">
+            <div className="mb-8 text-sm font-black text-blue-600">Industry-PPT-Gen</div>
+            <h3 className="text-3xl font-black tracking-[-0.035em] text-slate-950">行业报告 PPT 生成</h3>
+            <p className="mt-4 text-base leading-8 text-slate-600">输入行业关键词，自动生成包含产业图谱与深度分析的专业 PPT。</p>
+            <div className="mt-10 rounded-[26px] bg-white/70 p-5 shadow-sm"><div className="rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-500">输入关键词：跨境电商 AI员工</div><div className="mt-4 rounded-2xl bg-white p-4 text-sm font-black text-slate-700 shadow-sm">YATAI-Claw-产业应用报告.pptx</div></div>
+            <button className="mt-8 inline-flex items-center gap-2 text-lg font-black text-blue-600">立即生成 <Arrow className="h-5 w-5" /></button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section className="bg-white py-24 text-slate-950">
+      <div className="mx-auto max-w-7xl px-6 lg:px-8">
+        <div className="mb-14 text-center">
+          <Label>INDUSTRY SOLUTIONS</Label>
+          <h2 className="mt-5 text-4xl font-black tracking-[-0.045em] text-slate-950 md:text-6xl">面向行业场景的 AI 解决方案</h2>
+          <p className="mx-auto mt-5 max-w-3xl text-lg leading-8 text-slate-600">从个人电商创业出发，延展到跨境电商、内容增长、供应链、财税合规和园区服务，形成可复制的 AI员工解决方案矩阵。</p>
+        </div>
+        <div className="relative">
+          <button className="absolute left-[-26px] top-1/2 z-10 hidden h-14 w-14 -translate-y-1/2 items-center justify-center rounded-full bg-white text-2xl font-black text-slate-800 shadow-[0_12px_35px_rgba(15,23,42,.14)] lg:flex">?</button>
+          <div className="flex snap-x gap-6 overflow-x-auto pb-6 [-ms-overflow-style:none] [scrollbar-width:none]">
+            {industrySolutions.map(([title, pain, solution, gradient]) => (
+              <div key={title} className={cx("relative min-h-[520px] w-[320px] shrink-0 snap-center overflow-hidden rounded-[34px] bg-gradient-to-br p-7 text-white shadow-[0_26px_80px_rgba(15,23,42,.18)]", gradient)}>
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_65%,rgba(255,255,255,.24),transparent_34%)]" />
+                <div className="absolute bottom-0 left-0 right-0 h-52 bg-gradient-to-t from-black/35 to-transparent" />
+                <div className="relative">
+                  <h3 className="text-3xl font-black tracking-[-0.035em]">{title}</h3>
+                  <div className="mt-8 border-l border-white/55 pl-4 text-base font-bold leading-8 text-white/90">{pain}</div>
+                  <p className="mt-7 text-base leading-8 text-white/78">{solution}</p>
+                </div>
+                <button className="absolute bottom-8 left-7 inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/18 px-5 py-3 text-sm font-black text-white backdrop-blur">查看方案 <Arrow className="h-4 w-4" /></button>
+              </div>
+            ))}
+          </div>
+          <button className="absolute right-[-26px] top-1/2 z-10 hidden h-14 w-14 -translate-y-1/2 items-center justify-center rounded-full bg-white text-2xl font-black text-slate-800 shadow-[0_12px_35px_rgba(15,23,42,.14)] lg:flex">?</button>
+        </div>
+        <div className="mt-8 text-center">
+          <button className="inline-flex items-center gap-2 text-lg font-black text-slate-800">查看所有解决方案 <Arrow className="h-5 w-5" /></button>
+        </div>
+      </div>
+    </section>
+
+    <section id="skills" className="bg-white py-20 text-slate-950"><div className="mx-auto max-w-7xl px-6 lg:px-8"><div className="mb-10 flex flex-col justify-between gap-6 lg:flex-row lg:items-end"><div><Label>AI EMPLOYEE MARKET</Label><h2 className="mt-3 text-4xl font-black tracking-tight md:text-5xl">岗位即服务，能力即应用</h2></div><p className="max-w-xl leading-7 text-slate-600">把电商经营中的岗位能力模块化，像选择应用一样选择 AI员工，按场景组合成可落地的业务流程。</p></div><div className="mb-8 flex flex-col gap-4 rounded-[28px] border border-slate-200 bg-slate-50 p-4 lg:flex-row lg:items-center lg:justify-between"><div className="flex items-center gap-3 rounded-2xl bg-white px-4 py-3 text-slate-500 lg:w-[360px]"><Search className="h-5 w-5"/><span className="text-sm font-medium">搜索 AI员工 / 场景 / Skill</span></div><div className="flex flex-wrap gap-2">{categories.map(c=><button key={c} onClick={()=>setActive(c)} className={cx("rounded-full px-4 py-2 text-sm font-black transition", active===c ? "bg-blue-600 text-white" : "bg-white text-slate-600 hover:bg-slate-100")}>{c}</button>)}</div></div><div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">{visible.map(e=><EmployeeCard key={e[2]} emp={e}/>)}</div></div></section>
+
+    <section id="market" className="bg-slate-50 py-20 text-slate-950"><div className="mx-auto max-w-7xl px-6 lg:px-8"><div className="mb-10 flex flex-col justify-between gap-6 lg:flex-row lg:items-end"><div><Label>SKILL DOCK</Label><h2 className="mt-3 text-4xl font-black tracking-tight md:text-5xl">能力沉淀为包，服务可以复制</h2></div><p className="max-w-xl leading-7 text-slate-600">每个 AI员工都可以沉淀为标准化能力包，配套说明、样例、接口和运行规则，便于园区、社区和服务商批量复制。</p></div><div className="grid gap-5 lg:grid-cols-4">{skillCards.map(([name,title,desc,cmd])=><div key={name} className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm"><div className="mb-4 rounded-2xl bg-slate-950 px-4 py-3 text-sm font-black text-cyan-200">{name}</div><h3 className="text-xl font-black">{title}</h3><p className="mt-3 min-h-[72px] text-sm leading-7 text-slate-600">{desc}</p><div className="mt-5 rounded-2xl bg-slate-950 p-3 text-xs font-bold leading-6 text-cyan-100">{cmd}</div></div>)}</div></div></section>
+
+    <section id="models" className="relative overflow-hidden bg-[#eef5ff] py-24 text-slate-950"><div className="pointer-events-none absolute inset-0"><div className="absolute left-[-220px] top-[-180px] h-[520px] w-[520px] rounded-full bg-blue-300/30 blur-3xl"/><div className="absolute right-[-160px] top-0 h-[560px] w-[560px] rounded-full bg-cyan-300/30 blur-3xl"/></div><div className="relative mx-auto max-w-7xl px-6 lg:px-8"><div className="mb-10 flex flex-col justify-between gap-6 lg:flex-row lg:items-end"><div><Label>VOLCENGINE MODEL LAYER</Label><h2 className="mt-3 text-4xl font-black tracking-[-0.045em] md:text-5xl">模型能力做底座，业务场景做出口</h2></div><p className="max-w-xl leading-8 text-slate-600">将图像、视频、语言、多模态、语音和检索能力，封装成跨境电商 AI员工工作流，让模型能力直接服务经营动作。</p></div><div className="overflow-hidden rounded-[42px] border border-blue-100/80 bg-white/80 shadow-[0_35px_120px_rgba(30,64,175,.18)] backdrop-blur-2xl"><div className="grid lg:grid-cols-[.9fr_1.6fr]"><div className="border-b border-blue-100/70 bg-white/70 p-8 lg:border-b-0 lg:border-r lg:p-12"><div className="mb-8 inline-flex rounded-full bg-blue-600 px-4 py-2 text-xs font-black tracking-[0.2em] text-white">VOLCENGINE / ARK</div><h3 className="text-3xl font-black leading-tight tracking-[-0.035em] md:text-4xl">从大模型能力，落地为跨境电商 AI员工</h3><p className="mt-5 text-sm leading-8 text-slate-600">模型负责生成、理解、检索与推理；YATAI Claw 负责把模型能力转译成商品、运营、内容、数据和协同岗位能力。</p><div className="mt-10 grid grid-cols-2 gap-4">{[["AIGC","内容生成"],["RAG","知识增强"],["API","开放集成"],["Agent","AI员工"]].map(([a,b])=><div key={a} className="rounded-[26px] border border-blue-100 bg-white p-5 shadow-[0_16px_42px_rgba(37,99,235,.08)]"><div className="mb-4 grid h-16 w-16 place-items-center rounded-[22px] bg-gradient-to-br from-blue-600 to-cyan-400 text-lg font-black text-white">{a}</div><div className="text-lg font-black">{b}</div></div>)}</div></div><div className="relative bg-[radial-gradient(circle_at_50%_10%,rgba(37,99,235,.18),transparent_32%),linear-gradient(135deg,#f7fbff,#edf5ff_52%,#e3efff)] p-6 lg:p-10"><div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">{models.map(([name,type,desc,tag],i)=><div key={name} className="min-h-[248px] rounded-[30px] border border-white/90 bg-white/78 p-7 shadow-[0_20px_58px_rgba(37,99,235,.13)] backdrop-blur-xl"><div className="mb-7 flex justify-center"><div className="relative grid h-24 w-24 place-items-center rounded-[28px] bg-gradient-to-br from-blue-500 via-sky-400 to-cyan-400 text-white shadow-[0_24px_48px_rgba(37,99,235,.26)]"><span className="text-3xl font-black">{["?","?","D","?","?","?"][i]}</span></div></div><div className="text-[26px] font-black leading-tight tracking-[-0.03em]">{name}</div><div className="mt-2 text-lg font-black text-blue-700">{type}</div><p className="mt-5 min-h-[68px] text-base leading-8 text-slate-600">{desc}</p><div className="mt-5 inline-flex rounded-full bg-blue-50 px-4 py-2 text-sm font-black text-blue-700">{tag}</div></div>)}</div></div></div></div></div></section>
+
+    <section id="channels" className="bg-white py-20 text-slate-950"><div className="mx-auto max-w-7xl px-6 lg:px-8"><div className="mb-10"><Label>ECOSYSTEM</Label><h2 className="mt-3 text-4xl font-black tracking-tight md:text-5xl">多入口接入，多场景运行</h2><p className="mt-5 max-w-2xl leading-8 text-slate-600">不改变企业现有工具习惯，把 AI员工接入聊天、表格、系统和平台，让员工在熟悉入口中调用能力。</p></div><div className="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-6">{channels.map(c=><div key={c} className="rounded-3xl border border-slate-200 bg-slate-50 p-5 text-center font-black text-slate-700 shadow-sm">{c}</div>)}</div></div></section>
+
+    <section id="quickstart" className="bg-slate-950 py-20 text-white">
+      <div className="mx-auto grid max-w-7xl gap-10 px-6 lg:grid-cols-[.95fr_1.05fr] lg:px-8">
+        <div>
+          <Label dark>IMPLEMENTATION PATH</Label>
+          <h2 className="mt-3 text-4xl font-black tracking-tight md:text-5xl">从展示体验，到真实运营</h2>
+          <p className="mt-5 max-w-xl leading-8 text-slate-300">这一屏不再强调代码安装，而是展示平台如何交付给个人创业者、运营团队和园区服务方，形成可演示、可试用、可落地的服务路径。</p>
+          <div className="mt-8 grid gap-4">
+            {[["01", "业务诊断", "梳理经营阶段、店铺情况、商品资料和团队分工。"], ["02", "AI员工配置", "选择商品、运营、内容、数据、供应链和协同岗位能力。"], ["03", "工作流接入", "接入飞书、表格、Ozon API、PSD 模板、PDF 报告和模型服务。"], ["04", "看板运营", "沉淀日报、报告、任务、素材和经营指标，持续复盘优化。"]].map(([n, t, d]) => (
+              <div key={n} className="flex gap-4 rounded-3xl border border-white/10 bg-white/[.06] p-5">
+                <div className="font-black text-cyan-200">{n}</div>
+                <div><div className="font-black">{t}</div><div className="mt-1 text-sm text-slate-400">{d}</div></div>
               </div>
             ))}
           </div>
         </div>
-
-        <div className="text-slate-600">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-            <line x1="5" y1="12" x2="19" y2="12" />
-            <polyline points="12 5 19 12 12 19" />
-          </svg>
-        </div>
-
-        {/* Layer 4 - Runtime */}
-        <div className="glass rounded-xl p-6 w-full max-w-3xl">
-          <div className="text-xs text-slate-500 mb-3 text-center font-medium">Runtime 能力层</div>
-          <div className="flex flex-wrap justify-center gap-2">
-            {['Ozon API', 'PSD 模板引擎', 'Excel 数据分析', 'PDF 报告生成', 'ArkClaw Skill', '飞书 / 企业协作'].map((r) => (
-              <span key={r} className="text-xs px-3 py-1.5 rounded-full bg-white/5 text-slate-300 border border-white/5">
-                {r}
-              </span>
-            ))}
-          </div>
-        </div>
-
-        <div className="text-slate-600">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-            <line x1="5" y1="12" x2="19" y2="12" />
-            <polyline points="12 5 19 12 12 19" />
-          </svg>
-        </div>
-
-        {/* Layer 5 - Output */}
-        <div className="glass rounded-xl px-8 py-4 text-center border-cyan-500/30">
-          <div className="text-sm text-white font-medium">输出结果</div>
-          <div className="flex flex-wrap justify-center gap-2 mt-2">
-            {['商品图 ZIP', '巡检报告 PDF', '经营日报', '选品评分表', '资讯简报'].map((o) => (
-              <span key={o} className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400">
-                {o}
-              </span>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  </Section>
-)
-
-// ── Cases ──
-const Cases = () => (
-  <Section className="py-24 tech-grid">
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div className="text-center mb-14">
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-medium mb-4">
-          USE CASES
-        </div>
-        <h2 className="text-3xl sm:text-4xl font-bold gradient-text">案例场景</h2>
-        <p className="text-slate-400 mt-4 max-w-2xl mx-auto text-sm sm:text-base">
-          真实跨境电商工作场景中的 AI 智能体应用效果。
-        </p>
-      </div>
-
-      <div className="grid md:grid-cols-3 gap-5">
-        {cases.map((c) => (
-          <div key={c.title} className="glass rounded-xl p-6 card-hover">
-            <h3 className="text-white font-semibold text-base mb-4">{c.title}</h3>
-            <div className="space-y-3">
-              <div>
-                <div className="text-xs text-slate-500 mb-1">输入</div>
-                <div className="text-sm text-slate-300 bg-white/5 rounded-lg px-3 py-2">{c.input}</div>
-              </div>
-              <div className="flex items-center justify-center text-slate-600">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                  <line x1="5" y1="12" x2="19" y2="12" />
-                  <polyline points="12 5 19 12 12 19" />
-                </svg>
-              </div>
-              <div>
-                <div className="text-xs text-slate-500 mb-1">输出</div>
-                <div className="text-sm text-emerald-300 bg-emerald-500/10 rounded-lg px-3 py-2">{c.output}</div>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  </Section>
-)
-
-// ── CTA ──
-const CTA = () => (
-  <Section id="cta" className="py-24">
-    <div className="absolute inset-0 bg-gradient-to-b from-blue-600/10 to-transparent" />
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-      <div className="glass rounded-2xl p-10 sm:p-16 text-center glow-blue max-w-4xl mx-auto">
-        <h2 className="text-3xl sm:text-4xl font-bold gradient-text mb-4">
-          用 AI 智能体，启动你的跨境电商经营系统
-        </h2>
-        <p className="text-slate-400 max-w-lg mx-auto mb-8 text-sm sm:text-base">
-          从一个人开始，用 AI 智能体覆盖跨境电商全流程。不需要组建团队，不需要等待培训。
-        </p>
-        <div className="flex flex-wrap justify-center gap-3">
-          <a
-            href="#apps"
-            className="inline-flex items-center gap-1.5 px-6 py-3 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-sm font-medium hover:from-blue-500 hover:to-indigo-500 transition-all shadow-lg shadow-blue-600/25"
-          >
-            进入平台
-            <IconArrowRight />
-          </a>
-          <a
-            href="#"
-            className="inline-flex items-center gap-1.5 px-6 py-3 rounded-lg border border-white/10 text-slate-300 text-sm font-medium hover:bg-white/5 transition-all"
-          >
-            申请体验
-          </a>
-          <a
-            href="#solutions"
-            className="inline-flex items-center gap-1.5 px-6 py-3 rounded-lg border border-white/10 text-slate-300 text-sm font-medium hover:bg-white/5 transition-all"
-          >
-            查看解决方案
-          </a>
-        </div>
-      </div>
-    </div>
-  </Section>
-)
-
-// ── Footer ──
-const Footer = () => (
-  <footer className="border-t border-white/5 py-12">
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div className="grid md:grid-cols-4 gap-8">
-        <div className="md:col-span-1">
-          <div className="flex items-center gap-2 mb-3">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center text-white font-bold text-xs">
-              YC
-            </div>
-            <div>
-              <span className="text-white font-bold text-base">YATAI</span>
-              <span className="text-cyan-400 font-bold text-base ml-1">Claw</span>
-            </div>
-          </div>
-          <p className="text-xs text-slate-500 leading-relaxed">
-            跨境电商 AI 公共服务平台
-          </p>
-        </div>
-        {[
-          {
-            title: '平台',
-            links: ['AI 应用', '行业解决方案', '智能体大厅', '服务支持', '关于平台'],
-          },
-          {
-            title: '资源',
-            links: ['开发文档', 'API 参考', '更新日志', 'FAQ'],
-          },
-          {
-            title: '联系',
-            links: ['技术支持', '商务合作', '社区论坛'],
-          },
-        ].map((col) => (
-          <div key={col.title}>
-            <h4 className="text-white text-sm font-medium mb-3">{col.title}</h4>
-            <ul className="space-y-2">
-              {col.links.map((l) => (
-                <li key={l}>
-                  <a href="#" className="text-xs text-slate-500 hover:text-slate-300 transition-colors">
-                    {l}
-                  </a>
-                </li>
+        <div className="grid gap-5">
+          <div className="rounded-[34px] border border-white/10 bg-white/[.07] p-7 shadow-[0_26px_80px_rgba(0,0,0,.28)]">
+            <div className="mb-5 text-sm font-black text-cyan-200">SERVICE PACKAGE</div>
+            <h3 className="text-3xl font-black tracking-tight">个人电商创业服务包</h3>
+            <p className="mt-4 leading-8 text-slate-300">面向一人公司和轻团队，提供从工具、模板、AI员工到运营 SOP 的组合式服务。</p>
+            <div className="mt-7 grid gap-3 md:grid-cols-2">
+              {["AI员工工作台", "商品上新模板", "店铺巡检报告", "内容生成任务包", "经营数据看板", "日程协同提醒"].map((item) => (
+                <div key={item} className="flex items-center gap-3 rounded-2xl bg-white/[.07] p-4 text-sm font-bold text-slate-200"><Check className="h-4 w-4 text-cyan-200" />{item}</div>
               ))}
-            </ul>
+            </div>
           </div>
-        ))}
+          <div className="rounded-[34px] border border-white/10 bg-gradient-to-br from-blue-600/30 to-cyan-400/10 p-7">
+            <div className="text-sm font-black text-cyan-100">DELIVERY RESULT</div>
+            <div className="mt-4 grid grid-cols-3 gap-3 text-center">
+              {[["7天", "试运营"], ["1套", "创业包"], ["N个", "AI员工"]].map(([num, label]) => (
+                <div key={label} className="rounded-2xl bg-white/10 p-4"><div className="text-2xl font-black">{num}</div><div className="mt-1 text-xs text-slate-300">{label}</div></div>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
-      <div className="mt-10 pt-6 border-t border-white/5 text-center text-xs text-slate-600">
-        &copy; {new Date().getFullYear()} YATAI Claw. All rights reserved.
-      </div>
-    </div>
-  </footer>
-)
+    </section>
 
-// ── App ──
-export default function App() {
-  return (
-    <div className="min-h-screen bg-[#020617] text-slate-100">
-      <Navbar />
-      <main>
-        <Hero />
-        <Stats />
-        <AppCenter />
-        <Solutions />
-        <Packs />
-        <Architecture />
-        <Cases />
-        <CTA />
-      </main>
-      <Footer />
-    </div>
-  )
+    <section className="bg-[linear-gradient(135deg,#061026,#0e3d91_55%,#1f7cff)] py-20 text-white"><div className="mx-auto flex max-w-7xl flex-col justify-between gap-8 px-6 lg:flex-row lg:items-center lg:px-8"><div><h2 className="text-4xl font-black tracking-tight md:text-5xl">把跨境电商岗位能力，变成可复制 AI员工</h2><p className="mt-5 max-w-2xl leading-7 text-blue-100">从单点工具到 Skill 市场，从个人创业到社区化孵化，YATAI Claw 提供跨境电商 AI员工基础设施。</p></div><button className="rounded-full bg-white px-7 py-4 text-sm font-black text-slate-950">申请体验</button></div></section>
+
+    <footer className="bg-slate-950 py-10 text-slate-400"><div className="mx-auto flex max-w-7xl flex-col justify-between gap-6 px-6 lg:flex-row lg:items-center lg:px-8"><div className="flex items-center gap-3 text-white"><div className="grid h-10 w-10 place-items-center rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-400 font-black">Y</div><b>YATAI Claw</b></div><div className="text-sm">AI员工 / Skill市场 / 模型底座 / 生态接入 / 快速开始</div></div></footer>
+  </div>;
 }
