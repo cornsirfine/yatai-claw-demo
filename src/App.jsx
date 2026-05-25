@@ -254,8 +254,8 @@ export default function YataiClawPlatformDemo() {
       <div className="mx-auto grid max-w-7xl gap-10 px-6 lg:grid-cols-[.95fr_1.05fr] lg:px-8">
         <div>
           <Label dark>IMPLEMENTATION PATH</Label>
-          <h2 className="mt-3 text-4xl font-black tracking-tight md:text-5xl">从展示体验，到真实运营</h2>
-          <p className="mt-5 max-w-xl leading-8 text-slate-300">这一屏不再强调代码安装，而是展示平台如何交付给个人创业者、运营团队和园区服务方，形成可演示、可试用、可落地的服务路径。</p>
+          <h2 className="mt-3 text-4xl font-black tracking-tight md:text-5xl">从平台接入，到运营赋能</h2>
+          <p className="mt-5 max-w-xl leading-8 text-slate-300">面向个人创业者、运营团队及产业服务机构，YATAI Claw 提供 AI员工配置、业务流程接入、数据看板与运营服务能力，推动电商创业服务从单点工具应用升级为标准化、体系化、可持续的数字化运营体系。</p>
           <div className="mt-8 grid gap-4">
             {[["01", "业务诊断", "梳理经营阶段、店铺情况、商品资料和团队分工。"], ["02", "AI员工配置", "选择商品、运营、内容、数据、供应链和协同岗位能力。"], ["03", "工作流接入", "接入飞书、表格、Ozon API、PSD 模板、PDF 报告和模型服务。"], ["04", "看板运营", "沉淀日报、报告、任务、素材和经营指标，持续复盘优化。"]].map(([n, t, d]) => (
               <div key={n} className="flex gap-4 rounded-3xl border border-white/10 bg-white/[.06] p-5">
